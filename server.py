@@ -53,6 +53,10 @@ class AddRepoRequest(BaseModel):
     name: Optional[str] = None
 
 
+class ToggleRepoRequest(BaseModel):
+    active: bool
+
+
 class UpdateTimeslotRequest(BaseModel):
     hours: float
     summary: str
@@ -72,14 +76,22 @@ def ping():
 
 
 @app.get("/api/repos")
-def list_repositories():
-    return db.list_repos()
+def list_repositories(include_inactive: bool = False):
+    return db.list_repos(active_only=not include_inactive)
 
 
 @app.post("/api/repos")
 def add_repository(req: AddRepoRequest):
     repo = db.add_repo(req.path, name=req.name)
     return repo
+
+
+@app.patch("/api/repos/{repo_id}")
+def toggle_repository(repo_id: str, req: ToggleRepoRequest):
+    ok = db.toggle_repo_active(repo_id, req.active)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    return {"ok": True, "id": repo_id, "active": req.active}
 
 
 @app.delete("/api/repos/{repo_id}")
@@ -89,9 +101,9 @@ def remove_repository(repo_id: str):
 
 
 @app.get("/api/timeslots")
-def get_timeslots(date: Optional[str] = None):
+def get_timeslots(date: Optional[str] = None, active_only: bool = True):
     target_date = date or datetime.now().strftime("%Y-%m-%d")
-    slots = db.get_timeslots(target_date)
+    slots = db.get_timeslots(target_date, active_only=active_only)
     return {"date": target_date, "timeslots": slots}
 
 
@@ -106,12 +118,12 @@ def update_timeslot(slot_id: str, req: UpdateTimeslotRequest):
 @app.get("/api/scan")
 def scan_repositories(date: Optional[str] = None, author: Optional[str] = None):
     target_date = date or datetime.now().strftime("%Y-%m-%d")
-    repos = db.list_repos()
+    repos = db.list_repos(active_only=True)
 
     # If running on Render or without repos, ensure demo data is present
     if not repos and os.getenv("RENDER") == "true":
         db.seed_demo_data()
-        repos = db.list_repos()
+        repos = db.list_repos(active_only=True)
 
     generated_count = 0
     for repo in repos:
@@ -142,14 +154,14 @@ def scan_repositories(date: Optional[str] = None, author: Optional[str] = None):
         "date": target_date,
         "scanned_repos": len(repos),
         "generated_timeslots": generated_count,
-        "timeslots": db.get_timeslots(target_date)
+        "timeslots": db.get_timeslots(target_date, active_only=True)
     }
 
 
 @app.get("/api/export")
-def export_csv(date: Optional[str] = None):
+def export_csv(date: Optional[str] = None, active_only: bool = True):
     target_date = date or datetime.now().strftime("%Y-%m-%d")
-    slots = db.get_timeslots(target_date)
+    slots = db.get_timeslots(target_date, active_only=active_only)
 
     output = io.StringIO()
     writer = csv.writer(output)

@@ -32,12 +32,24 @@ def handle_repos(args):
         repo = db.add_repo(args.path, name=args.name)
         print(f"Added repo: {repo['name']} ({repo['path']}) [ID: {repo['id']}]")
     elif args.repo_action == "list":
-        repos = db.list_repos()
+        include_all = getattr(args, "all", False)
+        repos = db.list_repos(active_only=not include_all)
         if not repos:
-            print("No active repositories configured. Add one with 'cli.py repos add <path>'.")
+            print("No repositories found.")
             return
-        rows = [[r["id"], r["name"], r["path"]] for r in repos]
-        print(format_table(["ID", "Name", "Path"], rows))
+        rows = [
+            [r["id"], r["name"], "Active" if r.get("active", 1) else "Inactive", r["path"]]
+            for r in repos
+        ]
+        print(format_table(["ID", "Name", "Status", "Path"], rows))
+    elif args.repo_action == "toggle":
+        active = not args.disable
+        ok = db.toggle_repo_active(args.id, active)
+        if ok:
+            status = "Activated" if active else "Deactivated"
+            print(f"{status} repository {args.id}")
+        else:
+            print(f"Repository {args.id} not found.")
     elif args.repo_action == "remove":
         ok = db.remove_repo(args.id)
         if ok:
@@ -48,7 +60,7 @@ def handle_repos(args):
 
 def handle_scan(args):
     target_date = args.date or datetime.now().strftime("%Y-%m-%d")
-    repos = db.list_repos()
+    repos = db.list_repos(active_only=True)
     if not repos:
         print("No active repositories configured. Run 'cli.py repos add <path>' first.")
         return
@@ -138,7 +150,13 @@ def main():
     add_parser.set_defaults(func=handle_repos)
 
     list_parser = repos_sub.add_parser("list", help="List all tracked git repositories")
+    list_parser.add_argument("--all", action="store_true", help="Include inactive repositories")
     list_parser.set_defaults(func=handle_repos)
+
+    toggle_parser = repos_sub.add_parser("toggle", help="Activate or deactivate a repository")
+    toggle_parser.add_argument("id", help="Repository ID")
+    toggle_parser.add_argument("--disable", action="store_true", help="Deactivate the repository")
+    toggle_parser.set_defaults(func=handle_repos)
 
     remove_parser = repos_sub.add_parser("remove", help="Remove a tracked repository by ID")
     remove_parser.add_argument("id", help="Repository ID")

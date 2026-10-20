@@ -36,6 +36,38 @@ def test_cli_repos_flow(clean_db):
         check=True
     )
     assert "slothlog" in res_list.stdout
+    assert "Active" in res_list.stdout
+
+    # Get repo ID from list
+    repo = db.list_repos()[0]
+
+    # Deactivate repo
+    res_toggle = subprocess.run(
+        [sys.executable, "cli.py", "repos", "toggle", repo["id"], "--disable"],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    assert "Deactivated" in res_toggle.stdout
+
+    # Active list should be empty
+    res_active = subprocess.run(
+        [sys.executable, "cli.py", "repos", "list"],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    assert "No repositories found" in res_active.stdout
+
+    # List all should show it as Inactive
+    res_all = subprocess.run(
+        [sys.executable, "cli.py", "repos", "list", "--all"],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    assert "Inactive" in res_all.stdout
+
 
 
 def test_cli_export(clean_db, tmp_path):

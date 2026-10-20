@@ -38,10 +38,19 @@ def test_repo_crud():
     assert r2["id"] == r1["id"]
     assert len(db.list_repos()) == 1
 
+    # Toggle active
+    assert db.toggle_repo_active(r1["id"], False) is True
+    assert len(db.list_repos(active_only=True)) == 0
+    assert len(db.list_repos(active_only=False)) == 1
+
+    assert db.toggle_repo_active(r1["id"], True) is True
+    assert len(db.list_repos(active_only=True)) == 1
+
     # Remove
     deleted = db.remove_repo(r1["id"])
     assert deleted is True
     assert db.list_repos() == []
+
 
 
 def test_timeslot_crud():
@@ -68,6 +77,19 @@ def test_timeslot_crud():
 
     slots_after = db.get_timeslots("2026-10-20")
     assert slots_after[0]["hours"] == 4.0
+
+    # Add repo and deactivate it
+    repo = db.add_repo("/path/to/repo1", "Project Alpha")
+    db.toggle_repo_active(repo["id"], False)
+
+    # When active_only=True, timeslots from inactive repos are excluded
+    assert len(db.get_timeslots("2026-10-20", active_only=True)) == 0
+    assert len(db.get_timeslots("2026-10-20", active_only=False)) == 1
+
+    # Reactivate
+    db.toggle_repo_active(repo["id"], True)
+    assert len(db.get_timeslots("2026-10-20", active_only=True)) == 1
+
     assert slots_after[0]["summary"] == "Updated summary notes"
 
 

@@ -82,11 +82,20 @@ def add_repo(path: str, name: str | None = None) -> dict:
         }
 
 
-def list_repos() -> list[dict]:
+def list_repos(active_only: bool = True) -> list[dict]:
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT id, path, name, active, created_at FROM repos WHERE active = 1 ORDER BY name ASC")
+        if active_only:
+            cur.execute("SELECT id, path, name, active, created_at FROM repos WHERE active = 1 ORDER BY name ASC")
+        else:
+            cur.execute("SELECT id, path, name, active, created_at FROM repos ORDER BY name ASC")
         return [dict(r) for r in cur.fetchall()]
+
+
+def toggle_repo_active(repo_id: str, active: bool) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("UPDATE repos SET active = ? WHERE id = ?", (1 if active else 0, repo_id))
+        return cur.rowcount > 0
 
 
 def remove_repo(repo_id: str) -> bool:
@@ -100,6 +109,7 @@ def save_timeslot(entry: dict) -> dict:
     slot_id = entry.get("id") or str(uuid.uuid4())
     raw_commits_json = json.dumps(entry.get("raw_commits", []))
 
+    resolved_repo_path = str(Path(entry["repo_path"]).expanduser().resolve())
     with get_conn() as conn:
         conn.execute("""
             INSERT INTO timeslots (
@@ -113,8 +123,8 @@ def save_timeslot(entry: dict) -> dict:
         """, (
             slot_id,
             entry["date"],
-            entry["repo_path"],
-            entry.get("repo_name", Path(entry["repo_path"]).name),
+            resolved_repo_path,
+            entry.get("repo_name", Path(resolved_repo_path).name),
             entry["ticket_id"],
             float(entry["hours"]),
             entry.get("summary", ""),
@@ -124,15 +134,24 @@ def save_timeslot(entry: dict) -> dict:
         ))
 
     entry["id"] = slot_id
+    entry["repo_path"] = resolved_repo_path
     entry["created_at"] = now
     entry["updated_at"] = now
     return entry
 
 
-def get_timeslots(target_date: str) -> list[dict]:
+def get_timeslots(target_date: str, active_only: bool = False) -> list[dict]:
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT * FROM timeslots WHERE date = ? ORDER BY ticket_id ASC", (target_date,))
+        if active_only:
+            cur.execute("""
+                SELECT t.* FROM timeslots t
+                LEFT JOIN repos r ON t.repo_path = r.path
+                WHERE t.date = ? AND (r.active IS NULL OR r.active = 1)
+                ORDER BY t.ticket_id ASC
+            """, (target_date,))
+        else:
+            cur.execute("SELECT * FROM timeslots WHERE date = ? ORDER BY ticket_id ASC", (target_date,))
         rows = []
         for r in cur.fetchall():
             d = dict(r)

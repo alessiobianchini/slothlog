@@ -52,10 +52,29 @@ def test_repos_api(clean_db):
     resp_list = client.get("/api/repos")
     assert len(resp_list.json()) == 1
 
+    # Toggle active to false
+    resp_toggle = client.patch(f"/api/repos/{repo_id}", json={"active": False})
+    assert resp_toggle.status_code == 200
+    assert resp_toggle.json()["active"] is False
+
+    # List active only should be 0
+    resp_active = client.get("/api/repos")
+    assert len(resp_active.json()) == 0
+
+    # List including inactive should be 1
+    resp_all = client.get("/api/repos?include_inactive=true")
+    assert len(resp_all.json()) == 1
+
+    # Toggle back to true
+    resp_toggle_back = client.patch(f"/api/repos/{repo_id}", json={"active": True})
+    assert resp_toggle_back.status_code == 200
+    assert len(client.get("/api/repos").json()) == 1
+
     # Remove repo
     resp_del = client.delete(f"/api/repos/{repo_id}")
     assert resp_del.status_code == 200
     assert resp_del.json()["ok"] is True
+
 
 
 def test_timeslots_and_export(clean_db):

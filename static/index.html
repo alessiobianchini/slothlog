@@ -307,6 +307,10 @@
       <span class="status-badge">Gemma 2 2B (Ollama)</span>
       <span class="status-badge" style="border-color:#6366f1; color:#818cf8; background:rgba(99,102,241,0.15)">Sentry Active</span>
       <input type="date" id="datePicker" />
+      <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer;" title="Hide/show timeslots from inactive repositories">
+        <input type="checkbox" id="chkActiveOnly" checked />
+        <span>Active repos only</span>
+      </label>
       <button class="primary" id="btnScan">⚡ Scan Commits</button>
       <button class="secondary" id="btnRepos">📁 Tracked Repos</button>
       <button class="secondary" id="btnExport">⬇️ Export CSV</button>
@@ -362,6 +366,7 @@
     const statTickets = document.getElementById("statTickets");
     const statSaved = document.getElementById("statSaved");
     const toast = document.getElementById("toast");
+    const chkActiveOnly = document.getElementById("chkActiveOnly");
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -371,7 +376,8 @@
 
     async function loadTimeslots() {
       try {
-        const res = await fetch(`/api/timeslots?date=${currentDate}`);
+        const activeOnly = chkActiveOnly.checked;
+        const res = await fetch(`/api/timeslots?date=${currentDate}&active_only=${activeOnly}`);
         const data = await res.json();
         timeslots = data.timeslots || [];
         renderTimeslots();
@@ -509,7 +515,7 @@
 
     async function loadRepos() {
       try {
-        const res = await fetch("/api/repos");
+        const res = await fetch("/api/repos?include_inactive=true");
         const repos = await res.json();
         repoListContainer.innerHTML = "";
         if (repos.length === 0) {
@@ -519,10 +525,15 @@
         repos.forEach(r => {
           const item = document.createElement("div");
           item.className = "repo-item";
+          const isActive = r.active !== 0;
           item.innerHTML = `
-            <div>
-              <strong>${r.name}</strong>
-              <div style="color:var(--text-muted); font-size:11px;">${r.path}</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <input type="checkbox" ${isActive ? "checked" : ""} onchange="toggleRepo('${r.id}', this.checked)" title="Enable/disable repository for scans and results" style="cursor:pointer;" />
+              <div>
+                <strong style="${isActive ? '' : 'color:var(--text-muted); text-decoration:line-through;'}">${r.name}</strong>
+                <span style="font-size:10px; margin-left:6px; color:${isActive ? 'var(--accent)' : 'var(--text-muted)'}">${isActive ? 'Active' : 'Disabled'}</span>
+                <div style="color:var(--text-muted); font-size:11px;">${r.path}</div>
+              </div>
             </div>
             <button class="secondary icon-btn" style="color:var(--danger); border-color:var(--card-border);" onclick="deleteRepo('${r.id}')">Remove</button>
           `;
@@ -533,10 +544,26 @@
       }
     }
 
+    async function toggleRepo(id, isChecked) {
+      try {
+        await fetch(`/api/repos/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ active: isChecked })
+        });
+        showToast(isChecked ? "Repository enabled for scanning & results" : "Repository disabled");
+        await loadRepos();
+        await loadTimeslots();
+      } catch (err) {
+        console.error("Failed to toggle repo:", err);
+      }
+    }
+
     async function deleteRepo(id) {
       try {
         await fetch(`/api/repos/${id}`, { method: "DELETE" });
         await loadRepos();
+        await loadTimeslots();
         showToast("Repository removed.");
       } catch (err) {
         console.error("Failed to delete repo:", err);
@@ -556,6 +583,7 @@
         newRepoPath.value = "";
         newRepoName.value = "";
         await loadRepos();
+        await loadTimeslots();
         showToast("Repository added successfully!");
       } catch (err) {
         console.error("Failed to add repo:", err);
@@ -564,7 +592,7 @@
 
     // Actions
     document.getElementById("btnScan").onclick = async () => {
-      showToast("Scanning repositories with AI synthesis...");
+      showToast("Scanning active repositories with AI synthesis...");
       try {
         const res = await fetch(`/api/scan?date=${currentDate}`);
         const data = await res.json();
@@ -578,7 +606,11 @@
     };
 
     document.getElementById("btnExport").onclick = () => {
-      window.location.href = `/api/export?date=${currentDate}`;
+      window.location.href = `/api/export?date=${currentDate}&active_only=${chkActiveOnly.checked}`;
+    };
+
+    chkActiveOnly.onchange = () => {
+      loadTimeslots();
     };
 
     datePicker.value = currentDate;
