@@ -1,4 +1,5 @@
 import json
+import os
 import sqlite3
 import uuid
 from contextlib import contextmanager
@@ -8,9 +9,16 @@ from pathlib import Path
 DB_FILE = Path(__file__).parent / "sloth.db"
 
 
+def get_db_path() -> Path:
+    env_db = os.getenv("SLOTHLOG_DB")
+    if env_db:
+        return Path(env_db)
+    return DB_FILE
+
+
 @contextmanager
 def get_conn():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(get_db_path())
     conn.row_factory = sqlite3.Row
     try:
         conn.execute("PRAGMA journal_mode=WAL")
