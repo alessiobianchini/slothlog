@@ -144,10 +144,20 @@ def delete_timeslot(slot_id: str) -> bool:
 def save_timeslot(entry: dict) -> dict:
     now = datetime.now().isoformat()
     resolved_repo_path = str(Path(entry["repo_path"]).expanduser().resolve())
-    slot_id = entry.get("id") or generate_timeslot_id(entry["date"], resolved_repo_path, entry["ticket_id"])
     raw_commits_json = json.dumps(entry.get("raw_commits", []))
 
     with get_conn() as conn:
+        # Check if an entry already exists for (date, repo_path, ticket_id)
+        cur = conn.execute(
+            "SELECT id FROM timeslots WHERE date = ? AND repo_path = ? AND ticket_id = ?",
+            (entry["date"], resolved_repo_path, entry["ticket_id"])
+        )
+        existing = cur.fetchone()
+        if existing:
+            slot_id = existing["id"]
+        else:
+            slot_id = entry.get("id") or generate_timeslot_id(entry["date"], resolved_repo_path, entry["ticket_id"])
+
         conn.execute("""
             INSERT INTO timeslots (
                 id, date, repo_path, repo_name, ticket_id, hours, summary, raw_commits, created_at, updated_at
@@ -170,6 +180,12 @@ def save_timeslot(entry: dict) -> dict:
             now
         ))
 
+        # Enforce exactly one entry per (date, repo_path, ticket_id)
+        conn.execute(
+            "DELETE FROM timeslots WHERE date = ? AND repo_path = ? AND ticket_id = ? AND id != ?",
+            (entry["date"], resolved_repo_path, entry["ticket_id"], slot_id)
+        )
+
     entry["id"] = slot_id
     entry["repo_path"] = resolved_repo_path
     entry["created_at"] = now
@@ -179,6 +195,18 @@ def save_timeslot(entry: dict) -> dict:
 
 def get_timeslots(target_date: str, active_only: bool = False) -> list[dict]:
     with get_conn() as conn:
+        # Real-time deduplication guarantee
+        conn.execute("""
+            DELETE FROM timeslots
+            WHERE id NOT IN (
+                SELECT id FROM (
+                    SELECT id, ROW_NUMBER() OVER (
+                        PARTITION BY date, repo_path, ticket_id ORDER BY updated_at DESC, created_at DESC
+                    ) as rn
+                    FROM timeslots
+                ) WHERE rn = 1
+            )
+        """)
         cur = conn.cursor()
         if active_only:
             cur.execute("""
