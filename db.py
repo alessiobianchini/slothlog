@@ -255,9 +255,9 @@ def seed_demo_data():
             "hours": 3.25,
             "summary": "Refactored invoice calculation engine, added VAT reverse charge support for European B2B invoices, and implemented idempotency tests.",
             "raw_commits": [
-                "feat(AB#4920): add VAT reverse charge handler",
-                "test(AB#4920): verify zero tax for intra-EU enterprise customers",
-                "fix(AB#4920): handle currency rounding edge cases"
+                {"hash": "a1b2c3d", "message": "feat(AB#4920): add VAT reverse charge handler"},
+                {"hash": "e4f5g6h", "message": "test(AB#4920): verify zero tax for intra-EU enterprise customers"},
+                {"hash": "7i8j9k0", "message": "fix(AB#4920): handle currency rounding edge cases"}
             ]
         },
         {
@@ -268,9 +268,9 @@ def seed_demo_data():
             "hours": 2.50,
             "summary": "Implemented OAuth2 PKCE login flow callback, added refresh token rotation interceptor, and improved session expiry modal.",
             "raw_commits": [
-                "feat: PROJ-104 add PKCE exchange helper",
-                "feat: PROJ-104 add token refresh axios interceptor",
-                "wip PROJ-104 styling session timeout prompt"
+                {"hash": "c01a23b", "message": "feat: PROJ-104 add PKCE exchange helper"},
+                {"hash": "f45e67d", "message": "feat: PROJ-104 add token refresh axios interceptor"},
+                {"hash": "8901abc", "message": "wip PROJ-104 styling session timeout prompt"}
             ]
         },
         {
@@ -281,8 +281,8 @@ def seed_demo_data():
             "hours": 1.25,
             "summary": "Upgraded dependencies, cleaned up unused imports, and updated docker-compose dev environment.",
             "raw_commits": [
-                "chore: bump fastapi to 0.110.0",
-                "ci: clean up cache steps in github actions"
+                {"hash": "3d4e5f6", "message": "chore: bump fastapi to 0.110.0"},
+                {"hash": "7a8b9c0", "message": "ci: clean up cache steps in github actions"}
             ]
         }
     ]

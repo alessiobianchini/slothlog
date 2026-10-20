@@ -81,6 +81,10 @@ def handle_scan(args):
             messages = c.get("commit_messages") or [commit["message"] for commit in c.get("commits", [])]
             hours = c.get("hours", c.get("estimated_hours", 0.5))
             summary = parser.synthesize_summary(c["ticket_id"], messages)
+            raw_commits = [
+                {"hash": (commit.get("hash") or "")[:7], "message": commit.get("message", "")}
+                for commit in c.get("commits", [])
+            ] if c.get("commits") else messages
 
             slot_data = {
                 "date": target_date,
@@ -89,7 +93,7 @@ def handle_scan(args):
                 "ticket_id": c["ticket_id"],
                 "hours": hours,
                 "summary": summary,
-                "raw_commits": messages,
+                "raw_commits": raw_commits,
             }
 
             if args.save:

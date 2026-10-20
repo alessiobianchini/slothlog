@@ -160,6 +160,10 @@ def scan_repositories(date: Optional[str] = None, author: Optional[str] = None):
                 messages = c.get("commit_messages") or [commit["message"] for commit in c.get("commits", [])]
                 hours = c.get("hours", c.get("estimated_hours", 0.5))
                 summary = parser.synthesize_summary(c["ticket_id"], messages)
+                raw_commits = [
+                    {"hash": (commit.get("hash") or "")[:7], "message": commit.get("message", "")}
+                    for commit in c.get("commits", [])
+                ] if c.get("commits") else messages
                 db.save_timeslot({
                     "date": target_date,
                     "repo_path": repo_path,
@@ -167,7 +171,7 @@ def scan_repositories(date: Optional[str] = None, author: Optional[str] = None):
                     "ticket_id": c["ticket_id"],
                     "hours": hours,
                     "summary": summary,
-                    "raw_commits": messages,
+                    "raw_commits": raw_commits,
                 })
                 generated_count += 1
             logger.info("Repo '%s': created %d timeslots from %d commits", repo_name, len(clusters), len(commits))

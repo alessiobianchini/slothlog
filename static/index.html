@@ -429,7 +429,7 @@
     }
 
     details {
-      font-size: 11.5px;
+      font-size: 12px;
       color: var(--text-dim);
     }
     details summary {
@@ -437,18 +437,48 @@
       user-select: none;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
+      color: var(--text-muted);
+      font-weight: 500;
     }
     details summary:hover {
-      color: var(--text-muted);
+      color: var(--text);
     }
-    details ul {
+    .commit-list {
+      list-style: none;
       margin-top: 8px;
-      margin-left: 18px;
-      font-family: var(--font-mono);
-      color: var(--text-muted);
+      padding: 6px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    details li { margin-bottom: 2px; }
+    .commit-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      line-height: 1.4;
+    }
+    .commit-hash {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+      user-select: all;
+    }
+    .commit-msg {
+      color: #cbd5e1;
+      word-break: break-word;
+    }
 
     /* Skeleton Loading Cards */
     .skeleton-card {
@@ -652,6 +682,16 @@
     const scanProgressText = document.getElementById("scanProgressText");
     const scanProgressStep = document.getElementById("scanProgressStep");
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
     function showToast(msg) {
       toast.textContent = msg;
       toast.style.display = "block";
@@ -712,12 +752,35 @@
         const card = document.createElement("div");
         card.className = "timeslot-card";
         
-        const commitsHtml = (slot.raw_commits && slot.raw_commits.length) 
-          ? `<details>
-               <summary>${slot.raw_commits.length} underlying commits</summary>
-               <ul>${slot.raw_commits.map(c => `<li>${c}</li>`).join("")}</ul>
-             </details>`
-          : "";
+        let commitsHtml = "";
+        if (slot.raw_commits && slot.raw_commits.length) {
+          const listItems = slot.raw_commits.map(c => {
+            let hash = "";
+            let msg = "";
+            if (typeof c === "object" && c !== null) {
+              hash = c.hash || "";
+              msg = c.message || "";
+            } else {
+              const str = String(c);
+              const parts = str.split(" ");
+              if (parts.length > 1 && /^[a-f0-9]{7,40}$/i.test(parts[0])) {
+                hash = parts[0].slice(0, 7);
+                msg = parts.slice(1).join(" ");
+              } else {
+                msg = str;
+              }
+            }
+            const hashBadge = hash ? `<span class="commit-hash">${escapeHtml(hash.slice(0, 7))}</span>` : "";
+            return `<li class="commit-item">${hashBadge}<span class="commit-msg">${escapeHtml(msg)}</span></li>`;
+          }).join("");
+
+          commitsHtml = `
+            <details>
+              <summary>${slot.raw_commits.length} underlying commits</summary>
+              <ul class="commit-list">${listItems}</ul>
+            </details>
+          `;
+        }
 
         card.innerHTML = `
           <div class="card-top">
