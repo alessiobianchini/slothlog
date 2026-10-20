@@ -3,39 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SlothLog - AI Timesheet for Lazy & Steady Developers</title>
+  <title>SlothLog — Engineering Worklogs & Timesheet Clustering</title>
   <style>
     :root {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --card-border: #30363d;
-      --text-main: #c9d1d9;
-      --text-muted: #8b949e;
+      --bg: #090d16;
+      --surface: #0e131f;
+      --surface-elevated: #141b2c;
+      --border: #1b2333;
+      --border-hover: #2d3b55;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
       --accent: #10b981;
-      --accent-hover: #059669;
-      --accent-subtle: rgba(16, 185, 129, 0.15);
-      --danger: #f85149;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --accent-dim: rgba(16, 185, 129, 0.12);
+      --accent-border: rgba(16, 185, 129, 0.3);
+      --blue: #3b82f6;
+      --blue-dim: rgba(59, 130, 246, 0.12);
+      --danger: #ef4444;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: var(--bg);
-      color: var(--text-main);
-      font-family: var(--font);
-      font-size: 14px;
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 13.5px;
       line-height: 1.5;
-      padding: 24px;
-      max-width: 1200px;
+      padding: 32px 24px;
+      max-width: 1140px;
       margin: 0 auto;
+      -webkit-font-smoothing: antialiased;
     }
 
+    /* Header */
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 24px;
       flex-wrap: wrap;
       gap: 16px;
@@ -46,187 +54,422 @@
       align-items: center;
       gap: 12px;
     }
-    .brand h1 {
-      font-size: 22px;
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    }
+    .brand-title {
+      font-size: 18px;
       font-weight: 700;
       color: #fff;
+      letter-spacing: -0.3px;
       display: flex;
       align-items: center;
       gap: 8px;
     }
-    .brand p {
+    .brand-version {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: var(--surface-elevated);
+      color: var(--text-dim);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+    .brand-subtitle {
       font-size: 12px;
       color: var(--text-muted);
+      margin-top: 1px;
     }
 
-    .header-actions {
+    .header-controls {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
-    .status-badge {
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 12px;
-      background: var(--accent-subtle);
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      font-weight: 600;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 6px;
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
     }
 
-    input, select, button, textarea {
+    input, button {
       font-family: inherit;
       font-size: 13px;
       border-radius: 6px;
-      border: 1px solid var(--card-border);
-      background: var(--card-bg);
-      color: var(--text-main);
-      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 7px 12px;
       outline: none;
+      transition: all 0.15s ease;
     }
-    input:focus, textarea:focus { border-color: var(--accent); }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
 
     button {
       cursor: pointer;
       font-weight: 500;
-      transition: background 0.15s, border-color 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
-    button.primary {
-      background: var(--accent);
-      color: #0d1117;
-      border-color: var(--accent);
+    button.btn-primary {
+      background: #10b981;
+      color: #052e16;
+      border-color: #10b981;
       font-weight: 600;
     }
-    button.primary:hover { background: var(--accent-hover); }
-    button.secondary:hover { background: #21262d; border-color: #8b949e; }
-    button.icon-btn {
-      padding: 4px 8px;
-      font-size: 12px;
+    button.btn-primary:hover:not(:disabled) {
+      background: #059669;
+      border-color: #059669;
+    }
+    button.btn-primary:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
     }
 
-    .stats-bar {
+    button.btn-secondary {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+    button.btn-secondary:hover:not(:disabled) {
+      background: var(--surface-elevated);
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    /* Switch toggle */
+    .switch-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 32px;
+      height: 18px;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--border);
+      transition: .2s;
+      border-radius: 18px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 3px;
+      bottom: 3px;
+      background-color: #fff;
+      transition: .2s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent);
+    }
+    input:checked + .slider:before {
+      transform: translateX(14px);
+    }
+
+    /* Stats Overview */
+    .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
       margin-bottom: 24px;
     }
-    .stat-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      padding: 16px;
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 8px;
+      padding: 16px;
     }
-    .stat-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-    .stat-card .val { font-size: 24px; font-weight: 700; color: #fff; margin-top: 4px; }
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-dim);
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #fff;
+      margin-top: 4px;
+    }
 
-    .timesheet-grid {
+    /* Scanning Progress Feedback Banner */
+    #scanProgressBanner {
+      display: none;
+      background: var(--surface-elevated);
+      border: 1px solid var(--accent-border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .progress-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .progress-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 500;
+      font-size: 13px;
+      color: #fff;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar-fill {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #3b82f6 50%, #10b981 100%);
+      background-size: 200% 100%;
+      animation: moveGradient 1.5s linear infinite;
+    }
+    @keyframes moveGradient {
+      0% { background-position: 100% 0; }
+      100% { background-position: -100% 0; }
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(5, 46, 22, 0.3);
+      border-top-color: #052e16;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Timesheet List */
+    .timesheet-list {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
-    .slot-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+    .timeslot-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.15s ease;
+    }
+    .timeslot-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ticket-chip {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      background: var(--accent-dim);
+      color: #34d399;
+      border: 1px solid var(--accent-border);
+      letter-spacing: 0.3px;
+    }
+    .repo-chip {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      background: var(--surface-elevated);
+      padding: 3px 8px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+    }
+
+    /* Stepper */
+    .stepper {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .stepper button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .stepper button:hover {
+      background: var(--surface-elevated);
+      color: var(--text);
+    }
+    .stepper span {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fff;
+      padding: 0 10px;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    /* Summary textarea */
+    .summary-field {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: #e2e8f0;
+      font-family: inherit;
+      font-size: 13.5px;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+    }
+    .summary-field:focus {
+      border-color: var(--border-hover);
+      background: #0b101c;
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-dim);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .action-group {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-action {
+      font-size: 11.5px;
+      padding: 5px 10px;
+      color: var(--text-muted);
+      background: var(--surface-elevated);
+      border-color: var(--border);
+    }
+    .btn-action:hover {
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    details {
+      font-size: 11.5px;
+      color: var(--text-dim);
+    }
+    details summary {
+      cursor: pointer;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    details summary:hover {
+      color: var(--text-muted);
+    }
+    details ul {
+      margin-top: 8px;
+      margin-left: 18px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+    details li { margin-bottom: 2px; }
+
+    /* Skeleton Loading Cards */
+    .skeleton-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 8px;
       padding: 18px;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      transition: border-color 0.2s;
     }
-    .slot-card:hover { border-color: #444c56; }
-
-    .slot-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .ticket-badge {
-      font-size: 12px;
-      font-weight: 700;
-      padding: 3px 8px;
+    .skeleton-line {
+      height: 14px;
+      background: linear-gradient(90deg, #131926 25%, #1c2538 50%, #131926 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
       border-radius: 4px;
-      background: #238636;
-      color: #ffffff;
-      letter-spacing: 0.5px;
     }
-    .repo-pill {
-      font-size: 11px;
-      color: var(--text-muted);
-      background: #21262d;
-      padding: 2px 8px;
-      border-radius: 10px;
-    }
-
-    .hour-stepper {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #0d1117;
-      padding: 2px 6px;
-      border-radius: 6px;
-      border: 1px solid var(--card-border);
-    }
-    .hour-display {
-      font-size: 14px;
-      font-weight: 700;
-      color: #fff;
-      min-width: 48px;
-      text-align: center;
-    }
-
-    .slot-summary-box {
-      background: #0d1117;
-      border: 1px solid var(--card-border);
-      border-radius: 6px;
-      padding: 10px 12px;
-      color: #e6edf3;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-    .slot-summary-box textarea {
-      width: 100%;
-      border: none;
-      background: transparent;
-      resize: vertical;
-      color: inherit;
-      padding: 0;
-    }
-
-    .slot-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      color: var(--text-muted);
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .slot-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    details {
-      margin-top: 4px;
-    }
-    details summary {
-      cursor: pointer;
-      color: var(--text-muted);
-      font-size: 12px;
-      user-select: none;
-    }
-    details summary:hover { color: var(--text-main); }
-    details ul {
-      margin-top: 6px;
-      margin-left: 20px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 11px;
-      color: var(--text-muted);
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
     }
 
     /* Modal */
@@ -234,45 +477,49 @@
       display: none;
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(2px);
+      background: rgba(4, 7, 13, 0.75);
+      backdrop-filter: blur(4px);
       justify-content: center;
       align-items: center;
       z-index: 1000;
     }
     .modal-backdrop.active { display: flex; }
-    .modal-content {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 8px;
+    .modal-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
       width: 90%;
-      max-width: 550px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      max-width: 540px;
+      padding: 24px;
+      box-shadow: 0 16px 36px rgba(0,0,0,0.6);
     }
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
+    }
+    .modal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
     }
     .repo-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-height: 250px;
+      max-height: 280px;
       overflow-y: auto;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
-    .repo-item {
+    .repo-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #0d1117;
-      padding: 8px 12px;
+      background: var(--bg);
+      padding: 10px 14px;
       border-radius: 6px;
-      border: 1px solid var(--card-border);
-      font-size: 12px;
+      border: 1px solid var(--border);
     }
 
     /* Toast */
@@ -280,84 +527,114 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      background: var(--accent);
-      color: #0d1117;
-      font-weight: 600;
+      background: var(--surface-elevated);
+      color: #fff;
+      border: 1px solid var(--accent-border);
+      font-size: 12.5px;
+      font-weight: 500;
       padding: 10px 16px;
       border-radius: 6px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
       display: none;
       z-index: 9999;
-      animation: fadeIn 0.2s ease-in;
+      animation: fadeIn 0.15s ease-out;
     }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
   </style>
 </head>
 <body>
 
   <header>
     <div class="brand">
-      <div style="font-size: 32px;">🦥</div>
+      <div class="brand-icon">S</div>
       <div>
-        <h1>SlothLog</h1>
-        <p>Offline, AI-powered timesheets for lazy & steady developers</p>
+        <div class="brand-title">
+          SlothLog
+          <span class="brand-version">v1.0</span>
+        </div>
+        <div class="brand-subtitle">Git-backed engineering worklogs & timesheet clustering</div>
       </div>
     </div>
-    <div class="header-actions">
-      <span class="status-badge">Gemma 2 2B (Ollama)</span>
-      <span class="status-badge" style="border-color:#6366f1; color:#818cf8; background:rgba(99,102,241,0.15)">Sentry Active</span>
+    <div class="header-controls">
+      <div class="system-status" title="Local AI Inference via Ollama">
+        <span class="pulse-dot"></span>
+        <span>Gemma 2 2B (Local)</span>
+      </div>
       <input type="date" id="datePicker" />
-      <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); cursor:pointer;" title="Hide/show timeslots from inactive repositories">
-        <input type="checkbox" id="chkActiveOnly" checked />
-        <span>Active repos only</span>
+      <label class="switch-label" title="Filter timeslots to show only active repositories">
+        <div class="toggle-switch">
+          <input type="checkbox" id="chkActiveOnly" checked />
+          <span class="slider"></span>
+        </div>
+        <span>Active only</span>
       </label>
-      <button class="primary" id="btnScan">⚡ Scan Commits</button>
-      <button class="secondary" id="btnRepos">📁 Tracked Repos</button>
-      <button class="secondary" id="btnExport">⬇️ Export CSV</button>
+      <button class="btn-primary" id="btnScan">
+        <span id="btnScanIcon">⚡</span>
+        <span id="btnScanText">Scan Commits</span>
+      </button>
+      <button class="btn-secondary" id="btnRepos">Tracked Repos</button>
+      <button class="btn-secondary" id="btnExport">Export CSV</button>
     </div>
   </header>
 
-  <div class="stats-bar">
-    <div class="stat-card">
-      <div class="label">Total Logged Hours</div>
-      <div class="val" id="statHours">0.00 h</div>
+  <!-- Live Scan Progress Banner -->
+  <div id="scanProgressBanner">
+    <div class="progress-content">
+      <div class="progress-status">
+        <div class="spinner"></div>
+        <span id="scanProgressText">Analyzing git commit logs across active repositories...</span>
+      </div>
+      <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted);" id="scanProgressStep">1 / 2</span>
     </div>
-    <div class="stat-card">
-      <div class="label">Clustered Tickets</div>
-      <div class="val" id="statTickets">0</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">Manual Effort Saved</div>
-      <div class="val" id="statSaved">~0 mins</div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill"></div>
     </div>
   </div>
 
-  <div class="timesheet-grid" id="timesheetContainer">
-    <!-- Timeslot cards populated dynamically -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-label">Logged Hours</div>
+      <div class="stat-value" id="statHours">0.00 h</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Clustered Tickets</div>
+      <div class="stat-value" id="statTickets">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Estimated Time Saved</div>
+      <div class="stat-value" id="statSaved">~0 mins</div>
+    </div>
   </div>
 
-  <!-- Repos Modal -->
+  <div class="timesheet-list" id="timesheetContainer">
+    <!-- Timeslot items rendered dynamically -->
+  </div>
+
+  <!-- Repositories Drawer / Modal -->
   <div class="modal-backdrop" id="repoModal">
-    <div class="modal-content">
+    <div class="modal-dialog">
       <div class="modal-header">
-        <h3>Manage Tracked Repositories</h3>
-        <button class="secondary icon-btn" id="btnCloseRepoModal">✕</button>
+        <h3>Tracked Git Repositories</h3>
+        <button class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" id="btnCloseRepoModal">✕</button>
       </div>
       <div class="repo-list" id="repoListContainer">
-        <!-- Repos items populated dynamically -->
+        <!-- Repos list rendered dynamically -->
       </div>
       <div style="display:flex; flex-direction:column; gap:8px;">
-        <input type="text" id="newRepoPath" placeholder="Local git path (e.g. D:/Work/billing-service)" />
+        <input type="text" id="newRepoPath" placeholder="Repository local path (e.g. D:/Work/billing-service)" />
         <input type="text" id="newRepoName" placeholder="Friendly Name (optional)" />
-        <button class="primary" id="btnAddRepo">+ Add Repository</button>
+        <button class="btn-primary" id="btnAddRepo" style="justify-content: center;">+ Add Repository</button>
       </div>
     </div>
   </div>
 
-  <div id="toast">Copied to clipboard! 📋</div>
+  <div id="toast">Copied to clipboard</div>
 
   <script>
-    let currentDate = "2026-10-20"; // default sample / demo date
+    let currentDate = "2026-10-20";
     let timeslots = [];
 
     const datePicker = document.getElementById("datePicker");
@@ -367,6 +644,13 @@
     const statSaved = document.getElementById("statSaved");
     const toast = document.getElementById("toast");
     const chkActiveOnly = document.getElementById("chkActiveOnly");
+
+    const btnScan = document.getElementById("btnScan");
+    const btnScanIcon = document.getElementById("btnScanIcon");
+    const btnScanText = document.getElementById("btnScanText");
+    const scanProgressBanner = document.getElementById("scanProgressBanner");
+    const scanProgressText = document.getElementById("scanProgressText");
+    const scanProgressStep = document.getElementById("scanProgressStep");
 
     function showToast(msg) {
       toast.textContent = msg;
@@ -386,14 +670,34 @@
       }
     }
 
+    function renderSkeletons() {
+      timesheetContainer.innerHTML = `
+        <div class="skeleton-card">
+          <div style="display:flex; gap:10px; width:40%;">
+            <div class="skeleton-line" style="width:70px; height:20px;"></div>
+            <div class="skeleton-line" style="width:120px; height:20px;"></div>
+          </div>
+          <div class="skeleton-line" style="width:100%; height:38px; margin: 6px 0;"></div>
+          <div class="skeleton-line" style="width:30%; height:14px;"></div>
+        </div>
+        <div class="skeleton-card">
+          <div style="display:flex; gap:10px; width:40%;">
+            <div class="skeleton-line" style="width:70px; height:20px;"></div>
+            <div class="skeleton-line" style="width:120px; height:20px;"></div>
+          </div>
+          <div class="skeleton-line" style="width:100%; height:38px; margin: 6px 0;"></div>
+          <div class="skeleton-line" style="width:30%; height:14px;"></div>
+        </div>
+      `;
+    }
+
     function renderTimeslots() {
       timesheetContainer.innerHTML = "";
       if (timeslots.length === 0) {
         timesheetContainer.innerHTML = `
-          <div style="text-align:center; padding: 48px; color: var(--text-muted); background: var(--card-bg); border-radius: 8px; border: 1px dashed var(--card-border);">
-            <div style="font-size: 40px; margin-bottom: 12px;">🌿</div>
-            <p style="font-size: 16px; font-weight: 600; color: #fff;">No activity recorded for ${currentDate}</p>
-            <p style="margin-top: 4px;">Click <b>⚡ Scan Commits</b> above to inspect local git history, or switch dates.</p>
+          <div style="text-align:center; padding: 48px 20px; color: var(--text-dim); background: var(--surface); border-radius: 8px; border: 1px dashed var(--border);">
+            <p style="font-size: 15px; font-weight: 600; color: #fff;">No recorded timeslots for ${currentDate}</p>
+            <p style="margin-top: 6px; font-size: 12.5px;">Click <b>Scan Commits</b> above to inspect local git history, or change dates.</p>
           </div>
         `;
         statHours.textContent = "0.00 h";
@@ -406,7 +710,7 @@
       timeslots.forEach(slot => {
         totalHours += slot.hours;
         const card = document.createElement("div");
-        card.className = "slot-card";
+        card.className = "timeslot-card";
         
         const commitsHtml = (slot.raw_commits && slot.raw_commits.length) 
           ? `<details>
@@ -416,26 +720,26 @@
           : "";
 
         card.innerHTML = `
-          <div class="slot-header">
+          <div class="card-top">
             <div style="display:flex; align-items:center; gap:8px;">
-              <span class="ticket-badge">${slot.ticket_id}</span>
-              <span class="repo-pill">${slot.repo_name}</span>
+              <span class="ticket-chip">${slot.ticket_id}</span>
+              <span class="repo-chip">${slot.repo_name}</span>
             </div>
-            <div class="hour-stepper">
-              <button class="secondary icon-btn" onclick="adjustHours('${slot.id}', -0.25)">-</button>
-              <span class="hour-display">${slot.hours.toFixed(2)}h</span>
-              <button class="secondary icon-btn" onclick="adjustHours('${slot.id}', 0.25)">+</button>
+            <div class="stepper">
+              <button onclick="adjustHours('${slot.id}', -0.25)">-</button>
+              <span>${slot.hours.toFixed(2)}h</span>
+              <button onclick="adjustHours('${slot.id}', 0.25)">+</button>
             </div>
           </div>
-          <div class="slot-summary-box">
-            <textarea rows="2" onblur="updateSummary('${slot.id}', this.value)">${slot.summary}</textarea>
+          <div>
+            <textarea class="summary-field" rows="2" onblur="updateSummary('${slot.id}', this.value)">${slot.summary}</textarea>
           </div>
           ${commitsHtml}
-          <div class="slot-footer">
-            <span>Date: ${slot.date}</span>
-            <div class="slot-actions">
-              <button class="secondary icon-btn" onclick="copyJiraFormat('${slot.id}')">📋 Copy for Jira / DevOps</button>
-              <button class="secondary icon-btn" onclick="copySummaryOnly('${slot.id}')">📄 Copy Summary</button>
+          <div class="card-footer">
+            <span>Logged date: ${slot.date}</span>
+            <div class="action-group">
+              <button class="btn-secondary btn-action" onclick="copyJiraFormat('${slot.id}')">Copy for Jira / ADO</button>
+              <button class="btn-secondary btn-action" onclick="copySummaryOnly('${slot.id}')">Copy Summary</button>
             </div>
           </div>
         `;
@@ -475,7 +779,7 @@
           body: JSON.stringify({ hours: slot.hours, summary: text })
         });
         slot.summary = text;
-        showToast("Summary updated!");
+        showToast("Summary updated");
       } catch (err) {
         console.error("Failed to update summary:", err);
       }
@@ -486,7 +790,7 @@
       if (!slot) return;
       const text = `[${slot.ticket_id}] ${slot.hours.toFixed(2)}h: ${slot.summary}`;
       navigator.clipboard.writeText(text).then(() => {
-        showToast("Copied formatted timesheet line! 📋");
+        showToast("Copied formatted timesheet line");
       });
     }
 
@@ -494,11 +798,11 @@
       const slot = timeslots.find(s => s.id === id);
       if (!slot) return;
       navigator.clipboard.writeText(slot.summary).then(() => {
-        showToast("Copied summary to clipboard! 📋");
+        showToast("Copied summary to clipboard");
       });
     }
 
-    // Repos Modal logic
+    // Modal
     const repoModal = document.getElementById("repoModal");
     const btnRepos = document.getElementById("btnRepos");
     const btnCloseRepoModal = document.getElementById("btnCloseRepoModal");
@@ -519,23 +823,28 @@
         const repos = await res.json();
         repoListContainer.innerHTML = "";
         if (repos.length === 0) {
-          repoListContainer.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">No repositories configured yet.</div>`;
+          repoListContainer.innerHTML = `<div style="color:var(--text-dim); font-size:12px; padding: 12px; text-align:center;">No repositories configured yet.</div>`;
           return;
         }
         repos.forEach(r => {
           const item = document.createElement("div");
-          item.className = "repo-item";
+          item.className = "repo-row";
           const isActive = r.active !== 0;
           item.innerHTML = `
-            <div style="display:flex; align-items:center; gap:10px;">
-              <input type="checkbox" ${isActive ? "checked" : ""} onchange="toggleRepo('${r.id}', this.checked)" title="Enable/disable repository for scans and results" style="cursor:pointer;" />
+            <div style="display:flex; align-items:center; gap:12px;">
+              <label class="switch-label">
+                <div class="toggle-switch">
+                  <input type="checkbox" ${isActive ? "checked" : ""} onchange="toggleRepo('${r.id}', this.checked)" />
+                  <span class="slider"></span>
+                </div>
+              </label>
               <div>
-                <strong style="${isActive ? '' : 'color:var(--text-muted); text-decoration:line-through;'}">${r.name}</strong>
-                <span style="font-size:10px; margin-left:6px; color:${isActive ? 'var(--accent)' : 'var(--text-muted)'}">${isActive ? 'Active' : 'Disabled'}</span>
-                <div style="color:var(--text-muted); font-size:11px;">${r.path}</div>
+                <strong style="${isActive ? '' : 'color:var(--text-dim); text-decoration:line-through;'}">${r.name}</strong>
+                <span style="font-size:10px; margin-left:6px; font-family:var(--font-mono); color:${isActive ? 'var(--accent)' : 'var(--text-dim)'}">${isActive ? 'Active' : 'Disabled'}</span>
+                <div style="color:var(--text-dim); font-size:11px; font-family:var(--font-mono);">${r.path}</div>
               </div>
             </div>
-            <button class="secondary icon-btn" style="color:var(--danger); border-color:var(--card-border);" onclick="deleteRepo('${r.id}')">Remove</button>
+            <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px; color:var(--danger);" onclick="deleteRepo('${r.id}')">Remove</button>
           `;
           repoListContainer.appendChild(item);
         });
@@ -551,7 +860,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ active: isChecked })
         });
-        showToast(isChecked ? "Repository enabled for scanning & results" : "Repository disabled");
+        showToast(isChecked ? "Repository activated" : "Repository deactivated");
         await loadRepos();
         await loadTimeslots();
       } catch (err) {
@@ -564,7 +873,7 @@
         await fetch(`/api/repos/${id}`, { method: "DELETE" });
         await loadRepos();
         await loadTimeslots();
-        showToast("Repository removed.");
+        showToast("Repository removed");
       } catch (err) {
         console.error("Failed to delete repo:", err);
       }
@@ -584,24 +893,52 @@
         newRepoName.value = "";
         await loadRepos();
         await loadTimeslots();
-        showToast("Repository added successfully!");
+        showToast("Repository added");
       } catch (err) {
         console.error("Failed to add repo:", err);
       }
     };
 
-    // Actions
-    document.getElementById("btnScan").onclick = async () => {
-      showToast("Scanning active repositories with AI synthesis...");
+    // Scan with live feedback
+    btnScan.onclick = async () => {
+      // Enter loading state
+      btnScan.disabled = true;
+      btnScanIcon.innerHTML = `<span class="spinner"></span>`;
+      btnScanText.textContent = "Scanning...";
+      scanProgressBanner.style.display = "block";
+      scanProgressText.textContent = "Inspecting git histories across active repositories...";
+      scanProgressStep.textContent = "Step 1 of 2";
+
+      renderSkeletons();
+
+      // Staged progress simulation
+      const progressTimer = setTimeout(() => {
+        scanProgressText.textContent = "Clustering work sessions & generating executive summaries...";
+        scanProgressStep.textContent = "Step 2 of 2";
+      }, 700);
+
       try {
         const res = await fetch(`/api/scan?date=${currentDate}`);
+        clearTimeout(progressTimer);
         const data = await res.json();
         timeslots = data.timeslots || [];
         renderTimeslots();
-        showToast(`Scan complete: ${data.generated_timeslots} entries updated!`);
+
+        scanProgressText.textContent = `Scan complete: ${data.generated_timeslots || 0} timeslots generated!`;
+        scanProgressStep.textContent = "Done";
+        setTimeout(() => {
+          scanProgressBanner.style.display = "none";
+        }, 1800);
       } catch (err) {
         console.error("Scan error:", err);
-        showToast("Scan failed. Check server console.");
+        clearTimeout(progressTimer);
+        scanProgressBanner.style.display = "none";
+        showToast("Scan failed. Check terminal logs.");
+        loadTimeslots();
+      } finally {
+        btnScan.disabled = false;
+        btnScanIcon.textContent = "⚡";
+        btnScanText.textContent = "Scan Commits";
       }
     };
 

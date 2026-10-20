@@ -2,6 +2,7 @@ import csv
 from contextlib import asynccontextmanager
 from datetime import datetime
 import io
+import logging
 import os
 from pathlib import Path
 from typing import Optional
@@ -16,6 +17,9 @@ import cluster
 import db
 import git_inspector
 import parser
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger("slothlog")
 
 # Initialize Sentry Agent Tracing
 SENTRY_DSN = os.getenv(
@@ -125,30 +129,41 @@ def scan_repositories(date: Optional[str] = None, author: Optional[str] = None):
         db.seed_demo_data()
         repos = db.list_repos(active_only=True)
 
+    logger.info("Scanning %d active repositories for date %s", len(repos), target_date)
     generated_count = 0
+
     for repo in repos:
         repo_path = repo["path"]
         repo_name = repo["name"]
         auth = author or git_inspector.get_default_author(repo_path)
-        commits = git_inspector.inspect_repo(repo_path, target_date=target_date, author=auth)
+        try:
+            commits = git_inspector.inspect_repo(repo_path, target_date=target_date, author=auth)
+        except Exception as err:
+            logger.warning("Skipping repo '%s' due to inspection error: %s", repo_name, err)
+            continue
+
         if not commits:
             continue
 
-        clusters = cluster.cluster_commits(commits)
-        for c in clusters:
-            messages = c.get("commit_messages") or [commit["message"] for commit in c.get("commits", [])]
-            hours = c.get("hours", c.get("estimated_hours", 0.5))
-            summary = parser.synthesize_summary(c["ticket_id"], messages)
-            db.save_timeslot({
-                "date": target_date,
-                "repo_path": repo_path,
-                "repo_name": repo_name,
-                "ticket_id": c["ticket_id"],
-                "hours": hours,
-                "summary": summary,
-                "raw_commits": messages,
-            })
-            generated_count += 1
+        try:
+            clusters = cluster.cluster_commits(commits)
+            for c in clusters:
+                messages = c.get("commit_messages") or [commit["message"] for commit in c.get("commits", [])]
+                hours = c.get("hours", c.get("estimated_hours", 0.5))
+                summary = parser.synthesize_summary(c["ticket_id"], messages)
+                db.save_timeslot({
+                    "date": target_date,
+                    "repo_path": repo_path,
+                    "repo_name": repo_name,
+                    "ticket_id": c["ticket_id"],
+                    "hours": hours,
+                    "summary": summary,
+                    "raw_commits": messages,
+                })
+                generated_count += 1
+            logger.info("Repo '%s': created %d timeslots from %d commits", repo_name, len(clusters), len(commits))
+        except Exception as err:
+            logger.error("Error processing commits for repo '%s': %s", repo_name, err, exc_info=True)
 
     return {
         "date": target_date,
