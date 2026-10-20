@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+sloth.db
+sloth.db-wal
+sloth.db-shm
+.superpowers/
+.env
+venv/
