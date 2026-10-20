@@ -740,6 +740,7 @@
             <div class="action-group">
               <button class="btn-secondary btn-action" onclick="copyJiraFormat('${slot.id}')">Copy for Jira / ADO</button>
               <button class="btn-secondary btn-action" onclick="copySummaryOnly('${slot.id}')">Copy Summary</button>
+              <button class="btn-secondary btn-action" style="color:var(--danger);" onclick="deleteTimeslot('${slot.id}')" title="Delete this timeslot card">Delete</button>
             </div>
           </div>
         `;
@@ -801,6 +802,17 @@
         showToast("Copied summary to clipboard");
       });
     }
+
+    async function deleteTimeslot(id) {
+      try {
+        await fetch(`/api/timeslots/${id}`, { method: "DELETE" });
+        showToast("Timeslot removed");
+        await loadTimeslots();
+      } catch (err) {
+        console.error("Failed to delete timeslot:", err);
+      }
+    }
+
 
     // Modal
     const repoModal = document.getElementById("repoModal");

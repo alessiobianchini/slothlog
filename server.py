@@ -38,8 +38,8 @@ if SENTRY_DSN:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init_db()
-    # On Render cloud deployments or if empty, auto-seed realistic sample data
-    if os.getenv("RENDER") == "true" or not db.get_timeslots("2026-10-20"):
+    # Seed demo data only if no repositories exist at all
+    if not db.list_repos(active_only=False) and (os.getenv("RENDER") == "true" or not db.get_timeslots("2026-10-20")):
         db.seed_demo_data()
     yield
 
@@ -117,6 +117,15 @@ def update_timeslot(slot_id: str, req: UpdateTimeslotRequest):
     if not ok:
         raise HTTPException(status_code=404, detail="Timeslot not found")
     return {"ok": True, "id": slot_id, "hours": req.hours, "summary": req.summary}
+
+
+@app.delete("/api/timeslots/{slot_id}")
+def delete_timeslot(slot_id: str):
+    ok = db.delete_timeslot(slot_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Timeslot not found")
+    return {"ok": True, "id": slot_id}
+
 
 
 @app.get("/api/scan")

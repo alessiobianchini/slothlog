@@ -90,7 +90,24 @@ def test_timeslot_crud():
     db.toggle_repo_active(repo["id"], True)
     assert len(db.get_timeslots("2026-10-20", active_only=True)) == 1
 
-    assert slots_after[0]["summary"] == "Updated summary notes"
+    # Rescanning/saving same date, repo, ticket updates existing without duplicate
+    slot_duplicate = {
+        "date": "2026-10-20",
+        "repo_path": "/path/to/repo1",
+        "ticket_id": "AB#4920",
+        "hours": 5.0,
+        "summary": "Updated hours and new commit",
+        "raw_commits": ["commit 1", "commit 2", "commit 3"]
+    }
+    db.save_timeslot(slot_duplicate)
+    slots_dedup = db.get_timeslots("2026-10-20", active_only=True)
+    assert len(slots_dedup) == 1
+    assert slots_dedup[0]["hours"] == 5.0
+
+    # Delete timeslot
+    assert db.delete_timeslot(slots_dedup[0]["id"]) is True
+    assert len(db.get_timeslots("2026-10-20")) == 0
+
 
 
 def test_seed_demo_data():

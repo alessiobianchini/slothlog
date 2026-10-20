@@ -108,6 +108,12 @@ def test_timeslots_and_export(clean_db):
     assert "Date,Repo,Ticket,Hours,Summary" in resp_csv.text
     assert "PROJ-104" in resp_csv.text
 
+    # Delete timeslot endpoint
+    resp_del_slot = client.delete(f"/api/timeslots/{first_id}")
+    assert resp_del_slot.status_code == 200
+    assert resp_del_slot.json()["ok"] is True
+
+
 
 def test_sentry_debug_route():
     from server import app

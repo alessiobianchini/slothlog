@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 import sqlite3
@@ -14,6 +15,12 @@ def get_db_path() -> Path:
     if env_db:
         return Path(env_db)
     return DB_FILE
+
+
+def generate_timeslot_id(date: str, repo_path: str, ticket_id: str) -> str:
+    resolved = str(Path(repo_path).expanduser().resolve())
+    key = f"{date}|{resolved}|{ticket_id}"
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
 
 @contextmanager
@@ -54,6 +61,26 @@ def init_db():
             )
         """)
         conn.execute("CREATE INDEX IF NOT EXISTS idx_slots_date ON timeslots(date)")
+
+        # Purge orphaned timeslots if tracked repos exist
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) as cnt FROM repos")
+        repo_count = cur.fetchone()["cnt"]
+        if repo_count > 0:
+            conn.execute("DELETE FROM timeslots WHERE repo_path NOT IN (SELECT path FROM repos)")
+
+        # Deduplicate existing duplicate entries for same (date, repo_path, ticket_id)
+        conn.execute("""
+            DELETE FROM timeslots
+            WHERE id NOT IN (
+                SELECT id FROM (
+                    SELECT id, ROW_NUMBER() OVER (
+                        PARTITION BY date, repo_path, ticket_id ORDER BY updated_at DESC
+                    ) as rn
+                    FROM timeslots
+                ) WHERE rn = 1
+            )
+        """)
 
 
 def add_repo(path: str, name: str | None = None) -> dict:
@@ -100,16 +127,26 @@ def toggle_repo_active(repo_id: str, active: bool) -> bool:
 
 def remove_repo(repo_id: str) -> bool:
     with get_conn() as conn:
+        cur = conn.execute("SELECT path FROM repos WHERE id = ?", (repo_id,))
+        row = cur.fetchone()
+        if row:
+            conn.execute("DELETE FROM timeslots WHERE repo_path = ?", (row["path"],))
         cur = conn.execute("DELETE FROM repos WHERE id = ?", (repo_id,))
+        return cur.rowcount > 0
+
+
+def delete_timeslot(slot_id: str) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("DELETE FROM timeslots WHERE id = ?", (slot_id,))
         return cur.rowcount > 0
 
 
 def save_timeslot(entry: dict) -> dict:
     now = datetime.now().isoformat()
-    slot_id = entry.get("id") or str(uuid.uuid4())
+    resolved_repo_path = str(Path(entry["repo_path"]).expanduser().resolve())
+    slot_id = entry.get("id") or generate_timeslot_id(entry["date"], resolved_repo_path, entry["ticket_id"])
     raw_commits_json = json.dumps(entry.get("raw_commits", []))
 
-    resolved_repo_path = str(Path(entry["repo_path"]).expanduser().resolve())
     with get_conn() as conn:
         conn.execute("""
             INSERT INTO timeslots (
@@ -146,8 +183,8 @@ def get_timeslots(target_date: str, active_only: bool = False) -> list[dict]:
         if active_only:
             cur.execute("""
                 SELECT t.* FROM timeslots t
-                LEFT JOIN repos r ON t.repo_path = r.path
-                WHERE t.date = ? AND (r.active IS NULL OR r.active = 1)
+                INNER JOIN repos r ON t.repo_path = r.path
+                WHERE t.date = ? AND r.active = 1
                 ORDER BY t.ticket_id ASC
             """, (target_date,))
         else:
