@@ -95,3 +95,33 @@ def test_sentry_debug_route():
     client = TestClient(app, raise_server_exceptions=False)
     resp = client.get("/sentry-debug")
     assert resp.status_code == 500
+
+
+def test_scan_endpoint_flow(clean_db, monkeypatch):
+    import git_inspector
+    from server import app
+    client = TestClient(app)
+
+    # Register a repo
+    client.post("/api/repos", json={"path": "D:/dummy/repo", "name": "dummy-repo"})
+
+    # Mock inspect_repo to return commits
+    fake_commits = [
+        {
+            "hash": "abc123",
+            "timestamp": "2026-10-20T10:00:00+02:00",
+            "author": "Alessio",
+            "branch": "main",
+            "message": "feat(AB#5555): initial commit",
+            "repo": "dummy-repo"
+        }
+    ]
+    monkeypatch.setattr(git_inspector, "inspect_repo", lambda *args, **kwargs: fake_commits)
+
+    resp = client.get("/api/scan?date=2026-10-20")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["generated_timeslots"] >= 1
+    tickets = [t["ticket_id"] for t in data["timeslots"]]
+    assert "AB#5555" in tickets
+

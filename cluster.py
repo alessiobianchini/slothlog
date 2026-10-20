@@ -98,7 +98,9 @@ def cluster_commits(commits: List[Dict], gap_threshold_minutes: int = 90) -> Lis
             "branch": branch,
             "first_commit": sorted_commits[0]["timestamp"],
             "last_commit": sorted_commits[-1]["timestamp"],
+            "hours": estimated_hours,
             "estimated_hours": estimated_hours,
+            "commits": sorted_commits,
             "commit_messages": messages,
             "commits_count": len(sorted_commits)
         })

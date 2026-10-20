@@ -124,14 +124,15 @@ def scan_repositories(date: Optional[str] = None, author: Optional[str] = None):
 
         clusters = cluster.cluster_commits(commits)
         for c in clusters:
-            messages = [commit["message"] for commit in c["commits"]]
+            messages = c.get("commit_messages") or [commit["message"] for commit in c.get("commits", [])]
+            hours = c.get("hours", c.get("estimated_hours", 0.5))
             summary = parser.synthesize_summary(c["ticket_id"], messages)
             db.save_timeslot({
                 "date": target_date,
                 "repo_path": repo_path,
                 "repo_name": repo_name,
                 "ticket_id": c["ticket_id"],
-                "hours": c["hours"],
+                "hours": hours,
                 "summary": summary,
                 "raw_commits": messages,
             })
