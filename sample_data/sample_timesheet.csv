@@ -1,0 +1,4 @@
+Date,Repo,Ticket,Hours,Summary
+2026-10-20,billing-service,AB#4920,3.25,"Refactored invoice calculation engine, added VAT reverse charge support for European B2B invoices, and implemented idempotency tests."
+2026-10-20,portal-frontend,PROJ-104,2.50,"Implemented OAuth2 PKCE login flow callback, added refresh token rotation interceptor, and improved session expiry modal."
+2026-10-20,billing-service,General Maintenance,1.25,"Upgraded dependencies, cleaned up unused imports, and updated docker-compose dev environment."
