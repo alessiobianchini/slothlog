@@ -24,6 +24,14 @@ def test_ping_endpoint():
     assert response.json() == {"status": "ok", "app": "slothlog"}
 
 
+def test_root_serves_html():
+    from server import app
+    client = TestClient(app)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "SlothLog" in response.text
+
+
 def test_repos_api(clean_db):
     from server import app
     client = TestClient(app)

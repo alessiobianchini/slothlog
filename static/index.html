@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlothLog - AI Timesheet for Lazy & Steady Developers</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --card-border: #30363d;
+      --text-main: #c9d1d9;
+      --text-muted: #8b949e;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --accent-subtle: rgba(16, 185, 129, 0.15);
+      --danger: #f85149;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font);
+      font-size: 14px;
+      line-height: 1.5;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 12px;
+      background: var(--accent-subtle);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      font-weight: 600;
+    }
+
+    input, select, button, textarea {
+      font-family: inherit;
+      font-size: 13px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text-main);
+      padding: 6px 12px;
+      outline: none;
+    }
+    input:focus, textarea:focus { border-color: var(--accent); }
+
+    button {
+      cursor: pointer;
+      font-weight: 500;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    button.primary {
+      background: var(--accent);
+      color: #0d1117;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+    button.primary:hover { background: var(--accent-hover); }
+    button.secondary:hover { background: #21262d; border-color: #8b949e; }
+    button.icon-btn {
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 16px;
+      border-radius: 8px;
+    }
+    .stat-card .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .val { font-size: 24px; font-weight: 700; color: #fff; margin-top: 4px; }
+
+    .timesheet-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .slot-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s;
+    }
+    .slot-card:hover { border-color: #444c56; }
+
+    .slot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .ticket-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #238636;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+    }
+    .repo-pill {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: #21262d;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .hour-stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #0d1117;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+    }
+    .hour-display {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      min-width: 48px;
+      text-align: center;
+    }
+
+    .slot-summary-box {
+      background: #0d1117;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: #e6edf3;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .slot-summary-box textarea {
+      width: 100%;
+      border: none;
+      background: transparent;
+      resize: vertical;
+      color: inherit;
+      padding: 0;
+    }
+
+    .slot-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .slot-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    details {
+      margin-top: 4px;
+    }
+    details summary {
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 12px;
+      user-select: none;
+    }
+    details summary:hover { color: var(--text-main); }
+    details ul {
+      margin-top: 6px;
+      margin-left: 20px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(2px);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-backdrop.active { display: flex; }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 550px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .repo-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 250px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+    }
+    .repo-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0d1117;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      font-size: 12px;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--accent);
+      color: #0d1117;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      display: none;
+      z-index: 9999;
+      animation: fadeIn 0.2s ease-in;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div style="font-size: 32px;">🦥</div>
+      <div>
+        <h1>SlothLog</h1>
+        <p>Offline, AI-powered timesheets for lazy & steady developers</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="status-badge">Gemma 2 2B (Ollama)</span>
+      <span class="status-badge" style="border-color:#6366f1; color:#818cf8; background:rgba(99,102,241,0.15)">Sentry Active</span>
+      <input type="date" id="datePicker" />
+      <button class="primary" id="btnScan">⚡ Scan Commits</button>
+      <button class="secondary" id="btnRepos">📁 Tracked Repos</button>
+      <button class="secondary" id="btnExport">⬇️ Export CSV</button>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="label">Total Logged Hours</div>
+      <div class="val" id="statHours">0.00 h</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Clustered Tickets</div>
+      <div class="val" id="statTickets">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Manual Effort Saved</div>
+      <div class="val" id="statSaved">~0 mins</div>
+    </div>
+  </div>
+
+  <div class="timesheet-grid" id="timesheetContainer">
+    <!-- Timeslot cards populated dynamically -->
+  </div>
+
+  <!-- Repos Modal -->
+  <div class="modal-backdrop" id="repoModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Manage Tracked Repositories</h3>
+        <button class="secondary icon-btn" id="btnCloseRepoModal">✕</button>
+      </div>
+      <div class="repo-list" id="repoListContainer">
+        <!-- Repos items populated dynamically -->
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <input type="text" id="newRepoPath" placeholder="Local git path (e.g. D:/Work/billing-service)" />
+        <input type="text" id="newRepoName" placeholder="Friendly Name (optional)" />
+        <button class="primary" id="btnAddRepo">+ Add Repository</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">Copied to clipboard! 📋</div>
+
+  <script>
+    let currentDate = "2026-10-20"; // default sample / demo date
+    let timeslots = [];
+
+    const datePicker = document.getElementById("datePicker");
+    const timesheetContainer = document.getElementById("timesheetContainer");
+    const statHours = document.getElementById("statHours");
+    const statTickets = document.getElementById("statTickets");
+    const statSaved = document.getElementById("statSaved");
+    const toast = document.getElementById("toast");
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 2500);
+    }
+
+    async function loadTimeslots() {
+      try {
+        const res = await fetch(`/api/timeslots?date=${currentDate}`);
+        const data = await res.json();
+        timeslots = data.timeslots || [];
+        renderTimeslots();
+      } catch (err) {
+        console.error("Failed to load timeslots:", err);
+      }
+    }
+
+    function renderTimeslots() {
+      timesheetContainer.innerHTML = "";
+      if (timeslots.length === 0) {
+        timesheetContainer.innerHTML = `
+          <div style="text-align:center; padding: 48px; color: var(--text-muted); background: var(--card-bg); border-radius: 8px; border: 1px dashed var(--card-border);">
+            <div style="font-size: 40px; margin-bottom: 12px;">🌿</div>
+            <p style="font-size: 16px; font-weight: 600; color: #fff;">No activity recorded for ${currentDate}</p>
+            <p style="margin-top: 4px;">Click <b>⚡ Scan Commits</b> above to inspect local git history, or switch dates.</p>
+          </div>
+        `;
+        statHours.textContent = "0.00 h";
+        statTickets.textContent = "0";
+        statSaved.textContent = "~0 mins";
+        return;
+      }
+
+      let totalHours = 0;
+      timeslots.forEach(slot => {
+        totalHours += slot.hours;
+        const card = document.createElement("div");
+        card.className = "slot-card";
+        
+        const commitsHtml = (slot.raw_commits && slot.raw_commits.length) 
+          ? `<details>
+               <summary>${slot.raw_commits.length} underlying commits</summary>
+               <ul>${slot.raw_commits.map(c => `<li>${c}</li>`).join("")}</ul>
+             </details>`
+          : "";
+
+        card.innerHTML = `
+          <div class="slot-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="ticket-badge">${slot.ticket_id}</span>
+              <span class="repo-pill">${slot.repo_name}</span>
+            </div>
+            <div class="hour-stepper">
+              <button class="secondary icon-btn" onclick="adjustHours('${slot.id}', -0.25)">-</button>
+              <span class="hour-display">${slot.hours.toFixed(2)}h</span>
+              <button class="secondary icon-btn" onclick="adjustHours('${slot.id}', 0.25)">+</button>
+            </div>
+          </div>
+          <div class="slot-summary-box">
+            <textarea rows="2" onblur="updateSummary('${slot.id}', this.value)">${slot.summary}</textarea>
+          </div>
+          ${commitsHtml}
+          <div class="slot-footer">
+            <span>Date: ${slot.date}</span>
+            <div class="slot-actions">
+              <button class="secondary icon-btn" onclick="copyJiraFormat('${slot.id}')">📋 Copy for Jira / DevOps</button>
+              <button class="secondary icon-btn" onclick="copySummaryOnly('${slot.id}')">📄 Copy Summary</button>
+            </div>
+          </div>
+        `;
+        timesheetContainer.appendChild(card);
+      });
+
+      statHours.textContent = `${totalHours.toFixed(2)} h`;
+      statTickets.textContent = `${timeslots.length}`;
+      statSaved.textContent = `~${Math.round(timeslots.length * 15)} mins`;
+    }
+
+    async function adjustHours(id, delta) {
+      const slot = timeslots.find(s => s.id === id);
+      if (!slot) return;
+      const newHours = Math.max(0.25, Math.round((slot.hours + delta) * 100) / 100);
+      try {
+        await fetch(`/api/timeslots/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hours: newHours, summary: slot.summary })
+        });
+        slot.hours = newHours;
+        renderTimeslots();
+        showToast(`Hours updated to ${newHours.toFixed(2)}h`);
+      } catch (err) {
+        console.error("Failed to update hours:", err);
+      }
+    }
+
+    async function updateSummary(id, text) {
+      const slot = timeslots.find(s => s.id === id);
+      if (!slot || slot.summary === text) return;
+      try {
+        await fetch(`/api/timeslots/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hours: slot.hours, summary: text })
+        });
+        slot.summary = text;
+        showToast("Summary updated!");
+      } catch (err) {
+        console.error("Failed to update summary:", err);
+      }
+    }
+
+    function copyJiraFormat(id) {
+      const slot = timeslots.find(s => s.id === id);
+      if (!slot) return;
+      const text = `[${slot.ticket_id}] ${slot.hours.toFixed(2)}h: ${slot.summary}`;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("Copied formatted timesheet line! 📋");
+      });
+    }
+
+    function copySummaryOnly(id) {
+      const slot = timeslots.find(s => s.id === id);
+      if (!slot) return;
+      navigator.clipboard.writeText(slot.summary).then(() => {
+        showToast("Copied summary to clipboard! 📋");
+      });
+    }
+
+    // Repos Modal logic
+    const repoModal = document.getElementById("repoModal");
+    const btnRepos = document.getElementById("btnRepos");
+    const btnCloseRepoModal = document.getElementById("btnCloseRepoModal");
+    const repoListContainer = document.getElementById("repoListContainer");
+    const btnAddRepo = document.getElementById("btnAddRepo");
+    const newRepoPath = document.getElementById("newRepoPath");
+    const newRepoName = document.getElementById("newRepoName");
+
+    btnRepos.onclick = async () => {
+      repoModal.classList.add("active");
+      await loadRepos();
+    };
+    btnCloseRepoModal.onclick = () => repoModal.classList.remove("active");
+
+    async function loadRepos() {
+      try {
+        const res = await fetch("/api/repos");
+        const repos = await res.json();
+        repoListContainer.innerHTML = "";
+        if (repos.length === 0) {
+          repoListContainer.innerHTML = `<div style="color:var(--text-muted); font-size:12px;">No repositories configured yet.</div>`;
+          return;
+        }
+        repos.forEach(r => {
+          const item = document.createElement("div");
+          item.className = "repo-item";
+          item.innerHTML = `
+            <div>
+              <strong>${r.name}</strong>
+              <div style="color:var(--text-muted); font-size:11px;">${r.path}</div>
+            </div>
+            <button class="secondary icon-btn" style="color:var(--danger); border-color:var(--card-border);" onclick="deleteRepo('${r.id}')">Remove</button>
+          `;
+          repoListContainer.appendChild(item);
+        });
+      } catch (err) {
+        console.error("Failed to load repos:", err);
+      }
+    }
+
+    async function deleteRepo(id) {
+      try {
+        await fetch(`/api/repos/${id}`, { method: "DELETE" });
+        await loadRepos();
+        showToast("Repository removed.");
+      } catch (err) {
+        console.error("Failed to delete repo:", err);
+      }
+    }
+
+    btnAddRepo.onclick = async () => {
+      const path = newRepoPath.value.trim();
+      const name = newRepoName.value.trim();
+      if (!path) return;
+      try {
+        await fetch("/api/repos", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path, name: name || undefined })
+        });
+        newRepoPath.value = "";
+        newRepoName.value = "";
+        await loadRepos();
+        showToast("Repository added successfully!");
+      } catch (err) {
+        console.error("Failed to add repo:", err);
+      }
+    };
+
+    // Actions
+    document.getElementById("btnScan").onclick = async () => {
+      showToast("Scanning repositories with AI synthesis...");
+      try {
+        const res = await fetch(`/api/scan?date=${currentDate}`);
+        const data = await res.json();
+        timeslots = data.timeslots || [];
+        renderTimeslots();
+        showToast(`Scan complete: ${data.generated_timeslots} entries updated!`);
+      } catch (err) {
+        console.error("Scan error:", err);
+        showToast("Scan failed. Check server console.");
+      }
+    };
+
+    document.getElementById("btnExport").onclick = () => {
+      window.location.href = `/api/export?date=${currentDate}`;
+    };
+
+    datePicker.value = currentDate;
+    datePicker.onchange = (e) => {
+      currentDate = e.target.value;
+      loadTimeslots();
+    };
+
+    // Initial load
+    loadTimeslots();
+  </script>
+</body>
+</html>
