@@ -1,241 +1,184 @@
-<div align="center">
-
 # 🦥 SlothLog
 
-**Automated Git-backed worklogs & executive timesheets for developers who value steady progress.**  
-*100% offline &bull; Privacy-first &bull; Google Gemma 2 2B via Ollama &bull; Sentry Agent Tracing &bull; Zero cloud leaks*
+> Turn your git commits into honest, sensible timesheets — without leaking company code to the cloud.
 
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg?style=flat-square)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg?style=flat-square)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-21%20passed-success.svg?style=flat-square)](tests/)
-[![AI Inference](https://img.shields.io/badge/AI-Gemma%202%202B%20%28Local%29-orange.svg?style=flat-square)](https://ollama.ai)
-[![Telemetry](https://img.shields.io/badge/telemetry-Sentry%20GenAI%20Tracing-purple.svg?style=flat-square)](https://sentry.io)
-[![Deploy](https://img.shields.io/badge/deploy-Render%20Ready-black.svg?style=flat-square)](render.yaml)
-
-</div>
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg?style=flat-square)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-emerald.svg?style=flat-square)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-21%20passing-success.svg?style=flat-square)](tests/)
+[![Local AI](https://img.shields.io/badge/model-Gemma%202%202B%20(Local)-orange.svg?style=flat-square)](https://ollama.ai)
 
 ---
 
-## 💡 The Problem
+## Why this exists
 
-Every Friday afternoon, software engineers face the same frustrating archaeological dig:
-> *"What did I actually work on Tuesday morning?"*  
-> *"Which ticket was that subtle auth fix addressing?"*  
-> *"How do I explain 3 hours of debugging race conditions to a non-technical PM?"*
+Every Friday at 4:30 PM, the same ritual happens across engineering teams:
+- You open Jira, Azure DevOps, or whatever timesheet tool your company uses.
+- You stare at the blank week grid and wonder: *"What on earth was I doing on Tuesday morning?"*
+- You open your terminal, run `git log`, scroll frantically through branch names, and end up roughly guessing numbers to hit 8 hours a day.
 
-Manual timesheet tracking wastes **~45 minutes every week** per engineer. Most developers end up guessing haphazardly, while corporate confidentiality prevents piping internal commit messages or proprietary diffs into third-party cloud LLM APIs.
+Most of us waste 30 to 45 minutes every week doing this archaeological reconstruction. And while modern AI tools can summarize text, **pasting internal commit messages and proprietary code into third-party cloud APIs is a fast track to an unpleasant chat with Infosec**.
 
-**SlothLog** automates the entire loop locally:
-1. **Inspects** local git repositories for commits you made on any given day.
-2. **Clusters** activity by ticket identifier (`AB#` for Azure DevOps, `PROJ-` for Jira, `#` for GitHub, or `General Maintenance`).
-3. **Calculates** realistic working hours based on commit timestamp burst intervals and session clustering algorithms.
-4. **Synthesizes** clean, executive-ready accomplishment bullets using **Google Gemma 2 2B** running 100% locally via **Ollama**.
-5. **Instruments** every AI request with **Sentry GenAI Agent Tracing** (`gen_ai.chat` spans, tokens, latency, and \$0.00 cost tracking).
-6. **Exports** directly to CSV or gives you one-click formatted lines for instant pasting into Jira or Azure DevOps.
+**SlothLog** fixes this by staying completely local:
+1. It scans your local git repos for commits made on a specific day.
+2. It detects ticket IDs automatically (`AB#1234` for Azure DevOps, `PROJ-42` for Jira, `#123` for GitHub) and falls back to `General Maintenance` for untagged commits.
+3. It estimates realistic working hours based on commit timestamp gaps (no more wild guessing).
+4. It drafts a short, plain-English summary using a local **Gemma 2 2B** model running via **Ollama** (or a clean rule-based fallback if Ollama isn't running).
+5. You click one button to copy the formatted worklog line directly into your ticket. Done in 30 seconds.
 
 ---
 
-## 🖥️ Dashboard Preview
+## What it looks like
 
-SlothLog features a **Linear-grade utilitarian interface** with real-time scan feedback, skeleton loaders, and instant clipboard actions:
+SlothLog gives you a dark-mode web dashboard (and a scriptable CLI):
 
-```
+```text
 +-----------------------------------------------------------------------------------------------+
-|  [S] SlothLog v1.0   Git-backed worklogs & timesheet clustering   (● Gemma 2 Local) (● Sentry) |
+|  SlothLog              Git-backed worklogs & session clustering          (Local Gemma) (Sentry) |
 +-----------------------------------------------------------------------------------------------+
-|  Date: [ 2026-10-20 ]  [✓] Active only   [⚡ Scan Commits]   [Tracked Repos (2)]   [Export CSV] |
+|  Date: [ 2026-10-20 ]  [x] Active only   [⚡ Scan Commits]   [Tracked Repos (2)]   [Export CSV] |
 +-----------------------------------------------------------------------------------------------+
-|  [ Logged Hours: 7.00 h ]      [ Clustered Tickets: 3 ]      [ Estimated Time Saved: ~45 mins]|
+|  Logged Hours: 5.75h      Clustered Tickets: 2      Estimated Time Saved: ~30 mins            |
 +-----------------------------------------------------------------------------------------------+
 |                                                                                               |
 |  [AB#4920]  billing-service                                                 [ - ]  3.25h  [ + ]|
 |  "Refactored invoice calculation engine, added VAT reverse charge support for European B2B     |
 |   invoices, and implemented idempotency tests."                                               |
-|  ▸ 3 underlying commits                                                                       |
-|  [Copy for Jira / ADO]  [Copy Summary]                                                        |
+|  ▸ 3 underlying commits (da13fd1, 7i8j9k0, e4f5g6h)                                           |
+|  [Copy for Jira / ADO]  [Copy Summary]  [Delete]                                              |
 |                                                                                               |
 |  [PROJ-104]  portal-frontend                                                [ - ]  2.50h  [ + ]|
 |  "Implemented OAuth2 PKCE login flow callback, added refresh token rotation interceptor, and  |
 |   improved session expiry modal."                                                             |
-|  ▸ 3 underlying commits                                                                       |
-|  [Copy for Jira / ADO]  [Copy Summary]                                                        |
+|  ▸ 3 underlying commits (c01a23b, f45e67d, 8901abc)                                           |
+|  [Copy for Jira / ADO]  [Copy Summary]  [Delete]                                              |
 +-----------------------------------------------------------------------------------------------+
 ```
 
 ---
 
-## ⚡ Key Features
+## Features that make everyday work easier
 
-- **🔒 100% Offline & Private**: Proprietary commit messages and enterprise ticket content never leave your machine.
-- **🏷️ Multi-Platform Ticket Detection**: Native regex resolvers for:
-  - **Azure DevOps**: `AB#1234`, `#1234`
-  - **Jira**: `PROJ-104`, `CORE-99`
-  - **GitHub**: `gh-42`, `#42`
-  - **Untagged Commits**: Automatically grouped under `General Maintenance`.
-- **⏱️ Algorithmic Time Clustering**: Groups commits within **90-minute intervals** into continuous work sessions, applying a 30-minute burst buffer per session with minimum 0.5h rounding.
-- **🎛️ Active / Inactive Repository Management**: Enable or disable repositories from scanning and results with a single toggle, without losing configuration.
-- **📊 Real-time Visual Scan Feedback**: Dual-stage progress bar and animated skeleton loaders so you always know what the engine is processing.
-- **🔍 Full Sentry Agent Tracing**: OpenTelemetry-compatible `gen_ai.chat` spans capturing prompt evaluation tokens, completion tokens, latency, and cost telemetry.
-- **📋 One-Click Jira / Azure DevOps Formatting**: Click to copy pre-formatted worklog strings (e.g. `[AB#4920] 3.25h: Refactored invoice engine...`).
-- **💻 Dual Interface**: Standalone, scriptable CLI tool + sleek web dashboard.
-
----
-
-## 🏗️ Architecture
-
-```
-                          +-----------------------------+
-                          |    Local Git Repositories   |
-                          +--------------+--------------+
-                                         |
-                                         v
-                          +-----------------------------+
-                          |     Git Inspector Module    |
-                          | (Author & ISO date filter)  |
-                          +--------------+--------------+
-                                         |
-                                         v
-                          +-----------------------------+
-                          |    Ticket & Time Clustering |
-                          | (90-min burst window engine)|
-                          +--------------+--------------+
-                                         |
-                                         v
-+------------------+              +-----------------------------+              +----------------------+
-|  Sentry Agent    |<------------>|   Ollama / Gemma 2 2B       |<------------>|   FastAPI REST API   |
-|  Tracing Span    | (gen_ai.chat)|   Local Open-Weight Model   |              |   & SQLite DB (WAL)  |
-+------------------+              +-----------------------------+              +----------+-----------+
-                                                                                          |
-                                                          +-------------------------------+-------------------------------+
-                                                          |                                                               |
-                                                          v                                                               v
-                                           +-----------------------------+                                 +-----------------------------+
-                                           |   Linear-Style Dashboard    |                                 |     Standalone CLI Tool     |
-                                           |  (Live scan & 1-click copy) |                                 |  (slothlog scan / export)   |
-                                           +-----------------------------+                                 +-----------------------------+
-```
+- **Privacy by default**: Runs 100% on your machine. No telemetry of your commit content, no external API keys required.
+- **Smart ticket grouping**:
+  - **Azure DevOps**: detects `AB#1234`, `#1234`
+  - **Jira**: detects `PROJ-104`, `BACK-99`, etc.
+  - **GitHub**: detects `gh-42`, `#42`
+  - **Untagged**: neatly grouped under `General Maintenance`.
+- **Reasonable time estimation**: Groups commits into sessions based on a **90-minute inactivity threshold**, adding a reasonable buffer (minimum 0.5h, rounded to nearest 15 mins). You can always tweak the final hours with the `+` / `-` steppers.
+- **Commit hash inspection**: Expand the underlying commits accordion to see the exact short SHA (`da13fd1`) and commit message for full transparency.
+- **Repo toggles**: Temporarily disable repos you don't want in today's scan without having to delete them from your list.
+- **One-click copy**: Formatted ready-to-paste strings like `[AB#4920] 3.25h: Refactored invoice engine...`.
+- **Export to CSV**: For people who still have to email an Excel sheet to their manager.
+- **Works offline**: If Ollama isn't running, SlothLog doesn't crash — it switches to a deterministic fallback that cleans up conventional commit prefixes into clean readable sentences.
 
 ---
 
-## 🚀 Getting Started
+## Quickstart
 
 ### Prerequisites
+- Python 3.10 or newer
+- Git installed on your machine
+- *(Optional)* [Ollama](https://ollama.ai) with `gemma2:2b`:
+  ```bash
+  ollama pull gemma2:2b
+  ```
+  *(If you don't have Ollama, SlothLog still works completely fine using its built-in rule summarizer).*
 
-1. **Python 3.10+**
-2. **Git** installed on your system PATH
-3. *(Optional, for local AI inference)* **[Ollama](https://ollama.ai)** with Google Gemma 2 2B:
-   ```bash
-   ollama pull gemma2:2b
-   ```
-   > **Note**: If Ollama is offline or not installed, SlothLog activates a **graceful deterministic fallback**, extracting clean accomplishment notes from commit subjects without failing.
-
-### Installation
+### Install & Run
 
 ```bash
+# Clone the repository
 git clone https://github.com/alessiobianchini/slothlog.git
 cd slothlog
+
+# Install Python dependencies
 pip install -r requirements.txt
-```
 
----
-
-## 🌐 Running the Web Dashboard
-
-Start the application:
-```bash
+# Start the web app
 python run.py
 ```
-Open **[http://localhost:8000](http://localhost:8000)** in your browser.
 
-- **Add Repositories**: Click `Tracked Repos` to register local git directories.
-- **Run Scan**: Click `Scan Commits` to trigger git inspection, clustering, and Gemma 2 synthesis with live progress feedback.
-- **Adjust Hours**: Use `-` and `+` steppers to fine-tune session time.
-- **Export**: Click `Export CSV` to download the active timesheet.
+Then open **http://localhost:8000** in your browser:
+1. Click **Tracked Repos** to add the path of your local git folders.
+2. Pick a date and hit **⚡ Scan Commits**.
+3. Adjust any hours or summaries as needed.
+4. Copy the lines directly into Jira or Azure DevOps.
 
 ---
 
-## 💻 CLI Usage
+## Prefer the command line?
 
-SlothLog provides a full-featured, zero-server command-line utility:
+SlothLog also comes with a standalone CLI:
 
-### Track Repositories
 ```bash
-# Add repositories
-python cli.py repos add "D:/Work/billing-service" --name billing-service
-python cli.py repos add "D:/Work/portal-frontend" --name portal-frontend
+# Add your local repositories
+python cli.py repos add "D:/Projects/backend" --name backend
+python cli.py repos add "D:/Projects/frontend" --name frontend
 
-# List active repositories
+# See all configured repos
 python cli.py repos list
 
-# List all repositories (including deactivated ones)
-python cli.py repos list --all
-
-# Deactivate or reactivate a repository
-python cli.py repos toggle <repo_id> --disable
-python cli.py repos toggle <repo_id>
-```
-
-### Scan & Generate Timesheets
-```bash
-# Scan today's commits across all active repositories
+# Scan today's commits across all active repos
 python cli.py scan
 
-# Scan a specific date
+# Scan a past date
 python cli.py scan --date 2026-10-20
-```
 
-### Export to CSV
-```bash
-python cli.py export --date 2026-10-20 -o timesheet_2026-10-20.csv
+# Export directly to a CSV file
+python cli.py export --date 2026-10-20 -o timesheet.csv
 ```
 
 ---
 
-## 🔍 Sentry GenAI Telemetry
+## How SlothLog estimates your time
 
-Every local AI synthesis request is instrumented with Sentry's `gen_ai.chat` span:
-- `ai.model_id`: `gemma2:2b`
-- `ai.model_provider`: `ollama`
-- `ai.prompt_tokens`: Evaluation token count from Ollama
-- `ai.completion_tokens`: Completion token count from Ollama
-- `ai.cost`: `0.0` (Local open-source inference is completely free!)
-- Error tracking & `/sentry-debug` route to verify telemetry health.
+Real engineering work isn't evenly spaced commits every 10 minutes. Sometimes you make three commits in 15 minutes, then spend two hours reading docs or debugging before the next commit.
+
+SlothLog handles this with a simple time-gap rule:
+- Commits within **90 minutes** of each other belong to the same work session.
+- An isolated single commit gets a baseline 30-minute block (0.5h).
+- Extended sessions take the difference between your first and last commit in that window, plus a 30-minute buffer for wrap-up/testing.
+- All totals round to the nearest quarter-hour (`0.25h`), with a minimum of `0.5h`.
+- If the estimate doesn't match your actual day, the `+` / `-` buttons on each card let you adjust it in one click.
 
 ---
 
-## 🧪 Test Suite
+## Tech Stack & Observability
 
-SlothLog is engineered with strict Test-Driven Development (TDD):
+- **Backend**: FastAPI + Uvicorn
+- **Storage**: SQLite in WAL mode (`sloth.db`) with zero external database dependencies
+- **Inference**: Google Gemma 2 2B via local Ollama endpoint (`http://localhost:11434`)
+- **Telemetry**: Instrumented with **Sentry Agent Tracing** using standard OpenTelemetry `gen_ai.chat` spans:
+  - Tracks model, latency, and input/output tokens.
+  - Reports `$0.00` cost because running open-weights models locally is free.
+- **Frontend**: Lightweight vanilla HTML/CSS/JS — no heavy build steps, no node_modules required.
+
+---
+
+## Tests
+
+SlothLog has a complete test suite covering the database layer, git parsing, session clustering, REST endpoints, and CLI:
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-All 21 unit and integration tests cover:
-- SQLite connection pooling, WAL mode, deduplication, and active repo filtering
-- Git inspection with author and exact ISO timestamp matching
-- Azure DevOps, Jira, and GitHub ticket regex resolution
-- 90-minute session clustering and buffer math
-- Gemma 2 prompt evaluation and offline fallback
-- REST endpoints (`/api/ping`, `/api/repos`, `/api/scan`, `/api/timeslots`, `/api/export`, `/sentry-debug`)
-- CLI command invocation and CSV generation
-
 ---
 
-## 🏆 Hacktoberfest 2026 Submission
+## Hacktoberfest 2026
 
-SlothLog is officially submitted to **[Hacktoberfest Open-Source AI Challenge Week 3: Slow and Steady](https://dev.to/challenges/hacktoberfest-week3-2026-10-19)**.
+Built for **[Hacktoberfest Open-Source AI Challenge Week 3: Slow and Steady](https://dev.to/challenges/hacktoberfest-week3-2026-10-19)**.
 
-| Partner Category | How SlothLog Qualifies |
+| Track | Implementation |
 | :--- | :--- |
-| **Best Use of Gemma ($200)** | Uses local **Gemma 2 2B** via Ollama to transform fragmented git messages into concise, executive-grade timesheet summaries without leaking enterprise code or secrets to external cloud LLM APIs. |
-| **Best Use of Render ($200)** | Fully configured `render.yaml` blueprint with environment autodetection (`RENDER=true`) and automatic sample data seeding for live cloud demo deployments. |
-| **Best Use of Sentry Agent Tracing ($100)** | OpenTelemetry-compatible `gen_ai.chat` spans tracing prompt tokens, completion tokens, latency, and \$0.00 cost tracking. |
+| **Best Use of Gemma** | Uses **Gemma 2 2B** running locally to synthesize concise task accomplishments from granular git commits without cloud API privacy risks. |
+| **Best Use of Render** | Production-ready `render.yaml` blueprint with automated sample data seeding for live cloud demo deployments. |
+| **Best Use of Sentry Agent Tracing** | Fully instrumented `gen_ai.chat` spans capturing latency, token counts, and zero-cost local inference metrics. |
 
-The complete submission article is available in [`DEV_ARTICLE.md`](DEV_ARTICLE.md).
+Full submission writeup is available in [`DEV_ARTICLE.md`](DEV_ARTICLE.md).
 
 ---
 
-## 📄 License
+## License
 
-Distributed under the **MIT License**. Built with care for developers who value deep work and peaceful weekends.
+MIT License. Free to use, fork, and adapt. Built for developers who'd rather write code than spend their Friday afternoons guessing timesheets.
