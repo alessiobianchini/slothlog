@@ -1,8 +1,8 @@
 ---
 title: "SlothLog: Why I Built an Offline, AI-Powered Timesheet Generator for Lazy Developers"
 published: false
-description: "Turn fragmented git commits into polished executive timesheets with one click using local Gemma 2 2B, Sentry Agent Tracing, and zero cloud leaks."
-tags: "hacktoberfest, gemma, sentry, render"
+description: "Turn fragmented git commits into honest, sensible timesheets with one click using local Gemma 2 2B, Sentry Agent Tracing, and zero cloud leaks."
+tags: devchallenge, hf26challenge, gemma, render
 cover_image: ""
 canonical_url: ""
 ---
